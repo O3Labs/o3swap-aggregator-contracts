@@ -2,7 +2,7 @@
 
 pragma solidity =0.6.12;
 
-import "./Ownable.sol";
+import "./utils/Ownable.sol";
 import "./libraries/uniswap/UniswapV2Library.sol";
 import "./interfaces/uniswap/IUniswapV2Factory.sol";
 import './libraries/TransferHelper.sol';
