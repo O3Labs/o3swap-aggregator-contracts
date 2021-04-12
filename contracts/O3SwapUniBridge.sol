@@ -16,6 +16,11 @@ contract O3SwapUniBridge is Ownable {
     using SafeMath for uint256;
     using Convert for bytes;
 
+    event LOG_AGG_SWAP (
+        uint256 amountOut, // Raw swapped token amount out without aggFee
+        uint256 fee
+    );
+
     address public WETH;
     address public uniswapFactory;
     address public polySwapper;
@@ -48,8 +53,14 @@ contract O3SwapUniBridge is Ownable {
         address to,
         uint deadline
     ) external virtual ensure(deadline) {
-        uint uniAmountOut = _swapExactTokensForTokensSupportingFeeOnTransferTokens(amountIn, uniAmountOutMin, path);
-        TransferHelper.safeTransfer(path[path.length - 1], to, getExactAmount(uniAmountOut));
+        uint amountOut = _swapExactTokensForTokensSupportingFeeOnTransferTokens(amountIn, uniAmountOutMin, path);
+        uint feeAmount = amountOut.mul(aggregatorFee).div(FEE_DENOMINATOR);
+
+        emit LOG_AGG_SWAP(amountOut, feeAmount);
+
+        uint adjustedAmountOut = amountOut.sub(feeAmount);
+        TransferHelper.safeTransfer(path[path.length - 1], to, adjustedAmountOut);
+
     }
 
     function swapExactTokensForTokensSupportingFeeOnTransferTokensCrossChain(
@@ -64,14 +75,21 @@ contract O3SwapUniBridge is Ownable {
         uint polyMinOutAmount,
         uint fee
     ) external virtual ensure(deadline) returns (bool) {
-        uint uniAmountOut = _swapExactTokensForTokensSupportingFeeOnTransferTokens(amountIn, uniAmountOutMin, path);
+        uint polyAmountIn;
+        {
+            uint amountOut = _swapExactTokensForTokensSupportingFeeOnTransferTokens(amountIn, uniAmountOutMin, path);
+            uint feeAmount = amountOut.mul(aggregatorFee).div(FEE_DENOMINATOR);
+            emit LOG_AGG_SWAP(amountOut, feeAmount);
+            polyAmountIn = amountOut.sub(feeAmount);
+        }
+
         return _cross(
             path[path.length - 1],
             toPoolId,
             toChainId,
             toAssetHash,
             to,
-            getExactAmount(uniAmountOut),
+            polyAmountIn,
             polyMinOutAmount,
             fee,
             swapperId
@@ -99,8 +117,13 @@ contract O3SwapUniBridge is Ownable {
         address to,
         uint deadline
     ) external virtual payable ensure(deadline) {
-        uint uniAmountOut = _swapExactETHForTokensSupportingFeeOnTransferTokens(uniAmountOutMin, path);
-        TransferHelper.safeTransfer(path[path.length - 1], to, getExactAmount(uniAmountOut));
+        uint amountOut = _swapExactETHForTokensSupportingFeeOnTransferTokens(uniAmountOutMin, path);
+        uint feeAmount = amountOut.mul(aggregatorFee).div(FEE_DENOMINATOR);
+
+        emit LOG_AGG_SWAP(amountOut, feeAmount);
+
+        uint adjustedAmountOut = amountOut.sub(feeAmount);
+        TransferHelper.safeTransfer(path[path.length - 1], to, adjustedAmountOut);
     }
 
     function swapExactETHForTokensSupportingFeeOnTransferTokensCrossChain(
@@ -114,14 +137,21 @@ contract O3SwapUniBridge is Ownable {
         uint polyMinOutAmount,
         uint fee
     ) external virtual payable ensure(deadline) returns (bool) {
-        uint uniAmountOut = _swapExactETHForTokensSupportingFeeOnTransferTokens(uniAmountOutMin, path);
+        uint polyAmountIn;
+        {
+            uint amountOut = _swapExactETHForTokensSupportingFeeOnTransferTokens(uniAmountOutMin, path);
+            uint feeAmount = amountOut.mul(aggregatorFee).div(FEE_DENOMINATOR);
+            emit LOG_AGG_SWAP(amountOut, feeAmount);
+            polyAmountIn = amountOut.sub(feeAmount);
+        }
+
         return _cross(
             path[path.length - 1],
             toPoolId,
             toChainId,
             toAssetHash,
             to,
-            getExactAmount(uniAmountOut),
+            polyAmountIn,
             polyMinOutAmount,
             fee,
             swapperId
@@ -151,8 +181,13 @@ contract O3SwapUniBridge is Ownable {
         uint deadline
     ) external virtual ensure(deadline) {
         uint amountOut = _swapExactTokensForETHSupportingFeeOnTransferTokens(amountIn, uniAmountOutMin, path);
+        uint feeAmount = amountOut.mul(aggregatorFee).div(FEE_DENOMINATOR);
+
+        emit LOG_AGG_SWAP(amountOut, feeAmount);
+
         IWETH(WETH).withdraw(amountOut);
-        TransferHelper.safeTransferETH(to, getExactAmount(amountOut));
+        uint adjustedAmountOut = amountOut.sub(feeAmount);
+        TransferHelper.safeTransferETH(to, adjustedAmountOut);
     }
 
     function _swapExactTokensForETHSupportingFeeOnTransferTokens(
@@ -242,11 +277,6 @@ contract O3SwapUniBridge is Ownable {
         } else {
             TransferHelper.safeTransfer(token, owner(), IERC20(token).balanceOf(address(this)));
         }
-    }
-
-    function getExactAmount(uint amount) internal view returns(uint) {
-        uint feeAmount = amount.mul(aggregatorFee).div(FEE_DENOMINATOR);
-        return amount.sub(feeAmount);
     }
 
     function setAggregatorFee(uint _aggregatorFee) external onlyOwner {
