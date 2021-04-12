@@ -13,15 +13,16 @@ import "./interfaces/poly/ISwapper.sol";
 import "./libraries/Convert.sol";
 
 contract O3SwapUniBridge is Ownable {
-    using SafeMathUniswap for uint256;
+    using SafeMath for uint256;
     using Convert for bytes;
 
     address public WETH;
-    address public factory;
-    address public swapper;
+    address public uniswapFactory;
+    address public polySwapper;
     uint public swapperId;
 
-    uint64 public base_fee_denominator = 10**4;
+    uint256 public aggregatorFee = 3 * 10 ** 7; // Default to 0.3%
+    uint256 public constant FEE_DENOMINATOR = 10 ** 10;
 
     modifier ensure(uint deadline) {
         require(deadline >= block.timestamp, 'O3SwapUniBridge: EXPIRED');
@@ -35,30 +36,9 @@ contract O3SwapUniBridge is Ownable {
         uint _swapperId
     ) public {
         WETH = _weth;
-        factory = _factory;
-        swapper = _swapper;
+        uniswapFactory = _factory;
+        polySwapper = _swapper;
         swapperId = _swapperId;
-    }
-
-    function getSwapperId() external view returns (uint) {
-        return swapperId;
-    }
-
-    function setSwapperId(uint _swapperId) external onlyOwner {
-        swapperId = _swapperId;
-    }
-
-    function collect(address token) external {
-        if (token == WETH) {
-            IWETH(WETH).withdraw(IERC20(token).balanceOf(address(this)));
-            TransferHelper.safeTransferETH(owner(), IERC20(token).balanceOf(address(this)));
-        } else {
-            TransferHelper.safeTransfer(token, owner(), IERC20(token).balanceOf(address(this)));
-        }
-    }
-
-    function getExactAmount(uint amount) internal view returns(uint) {
-        return amount.sub(amount / base_fee_denominator);
     }
 
     function swapExactTokensForTokensSupportingFeeOnTransferTokens(
@@ -104,12 +84,12 @@ contract O3SwapUniBridge is Ownable {
         address[] calldata path
     ) internal virtual returns (uint) {
         TransferHelper.safeTransferFrom(
-            path[0], msg.sender, UniswapV2Library.pairFor(factory, path[0], path[1]), amountIn
+            path[0], msg.sender, UniswapV2Library.pairFor(uniswapFactory, path[0], path[1]), amountIn
         );
         uint balanceBefore = IERC20(path[path.length - 1]).balanceOf(address(this));
         _swapSupportingFeeOnTransferTokens(path, address(this));
         uint amountOut = IERC20(path[path.length - 1]).balanceOf(address(this)).sub(balanceBefore);
-        require(amountOut >= amountOutMin, 'UniswapV2Router: INSUFFICIENT_OUTPUT_AMOUNT');
+        require(amountOut >= amountOutMin, 'O3SwapUniBridge: INSUFFICIENT_OUTPUT_AMOUNT');
         return amountOut;
     }
 
@@ -135,9 +115,8 @@ contract O3SwapUniBridge is Ownable {
         uint fee
     ) external virtual payable ensure(deadline) returns (bool) {
         uint uniAmountOut = _swapExactETHForTokensSupportingFeeOnTransferTokens(uniAmountOutMin, path);
-        address fromAssetHash = path[path.length - 1];
         return _cross(
-            fromAssetHash,
+            path[path.length - 1],
             toPoolId,
             toChainId,
             toAssetHash,
@@ -153,14 +132,14 @@ contract O3SwapUniBridge is Ownable {
         uint uniAmountOutMin,
         address[] calldata path
     ) internal virtual returns (uint) {
-        require(path[0] == WETH, 'UniswapV2Router: INVALID_PATH');
+        require(path[0] == WETH, 'O3SwapUniBridge: INVALID_PATH');
         uint amountIn = msg.value;
         IWETH(WETH).deposit{value: amountIn}();
-        assert(IWETH(WETH).transfer(UniswapV2Library.pairFor(factory, path[0], path[1]), amountIn));
+        assert(IWETH(WETH).transfer(UniswapV2Library.pairFor(uniswapFactory, path[0], path[1]), amountIn));
         uint balanceBefore = IERC20(path[path.length - 1]).balanceOf(address(this));
         _swapSupportingFeeOnTransferTokens(path, address(this));
         uint amountOut = IERC20(path[path.length - 1]).balanceOf(address(this)).sub(balanceBefore);
-        require(amountOut >= uniAmountOutMin, 'UniswapV2Router: INSUFFICIENT_OUTPUT_AMOUNT');
+        require(amountOut >= uniAmountOutMin, 'O3SwapUniBridge: INSUFFICIENT_OUTPUT_AMOUNT');
         return amountOut;
     }
 
@@ -172,9 +151,8 @@ contract O3SwapUniBridge is Ownable {
         uint deadline
     ) external virtual ensure(deadline) {
         uint amountOut = _swapExactTokensForETHSupportingFeeOnTransferTokens(amountIn, uniAmountOutMin, path);
-        uint adjustedAmountOut = getExactAmount(amountOut);
-        IWETH(WETH).withdraw(adjustedAmountOut);
-        TransferHelper.safeTransferETH(to, adjustedAmountOut);
+        IWETH(WETH).withdraw(amountOut);
+        TransferHelper.safeTransferETH(to, getExactAmount(amountOut));
     }
 
     function _swapExactTokensForETHSupportingFeeOnTransferTokens(
@@ -182,14 +160,14 @@ contract O3SwapUniBridge is Ownable {
         uint uniAmountOutMin,
         address[] calldata path
     ) internal virtual returns (uint) {
-        require(path[path.length - 1] == WETH, 'UniswapV2Router: INVALID_PATH');
+        require(path[path.length - 1] == WETH, 'O3SwapUniBridge: INVALID_PATH');
         TransferHelper.safeTransferFrom(
-            path[0], msg.sender, UniswapV2Library.pairFor(factory, path[0], path[1]), amountIn
+            path[0], msg.sender, UniswapV2Library.pairFor(uniswapFactory, path[0], path[1]), amountIn
         );
         uint balanceBefore = IERC20(WETH).balanceOf(address(this));
         _swapSupportingFeeOnTransferTokens(path, address(this));
         uint amountOut = IERC20(WETH).balanceOf(address(this)).sub(balanceBefore);
-        require(amountOut >= uniAmountOutMin, 'UniswapV2Router: INSUFFICIENT_OUTPUT_AMOUNT');
+        require(amountOut >= uniAmountOutMin, 'O3SwapUniBridge: INSUFFICIENT_OUTPUT_AMOUNT');
         return amountOut;
     }
 
@@ -199,7 +177,7 @@ contract O3SwapUniBridge is Ownable {
         for (uint i; i < path.length - 1; i++) {
             (address input, address output) = (path[i], path[i + 1]);
             (address token0,) = UniswapV2Library.sortTokens(input, output);
-            IUniswapV2Pair pair = IUniswapV2Pair(UniswapV2Library.pairFor(factory, input, output));
+            IUniswapV2Pair pair = IUniswapV2Pair(UniswapV2Library.pairFor(uniswapFactory, input, output));
             uint amountInput;
             uint amountOutput;
             { // scope to avoid stack too deep errors
@@ -209,7 +187,7 @@ contract O3SwapUniBridge is Ownable {
             amountOutput = UniswapV2Library.getAmountOut(amountInput, reserveInput, reserveOutput);
             }
             (uint amount0Out, uint amount1Out) = input == token0 ? (uint(0), amountOutput) : (amountOutput, uint(0));
-            address to = i < path.length - 2 ? UniswapV2Library.pairFor(factory, output, path[i + 2]) : _to;
+            address to = i < path.length - 2 ? UniswapV2Library.pairFor(uniswapFactory, output, path[i + 2]) : _to;
             pair.swap(amount0Out, amount1Out, to, new bytes(0));
         }
     }
@@ -226,9 +204,9 @@ contract O3SwapUniBridge is Ownable {
         uint id
     ) internal returns (bool) {
         // Allow `swapper contract` to transfer `amount` of `fromAssetHash` on belaof of this contract.
-        IERC20(fromAssetHash).approve(swapper, amount);
+        IERC20(fromAssetHash).approve(polySwapper, amount);
 
-        bool result = ISwapper(swapper).swap(
+        bool result = ISwapper(polySwapper).swap(
             fromAssetHash,
             toPoolId,
             toChainId,
@@ -242,5 +220,44 @@ contract O3SwapUniBridge is Ownable {
         require(result, "POLY CROSSCHAIN ERROR");
 
         return result;
+    }
+
+    receive() external payable { }
+
+    function getSwapperId() external view returns (uint) {
+        return swapperId;
+    }
+
+    function setSwapperId(uint _swapperId) external onlyOwner {
+        swapperId = _swapperId;
+    }
+
+    function collect(address token) external {
+        if (token == WETH) {
+            uint256 wethBalance = IERC20(token).balanceOf(address(this));
+            if (wethBalance > 0) {
+                IWETH(WETH).withdraw(wethBalance);
+            }
+            TransferHelper.safeTransferETH(owner(), IERC20(token).balanceOf(address(this)));
+        } else {
+            TransferHelper.safeTransfer(token, owner(), IERC20(token).balanceOf(address(this)));
+        }
+    }
+
+    function getExactAmount(uint amount) internal view returns(uint) {
+        uint feeAmount = amount.mul(aggregatorFee).div(FEE_DENOMINATOR);
+        return amount.sub(feeAmount);
+    }
+
+    function setAggregatorFee(uint _aggregatorFee) external onlyOwner {
+        aggregatorFee = _aggregatorFee;
+    }
+
+    function setUniswapFactory(address _uniswapFactory) external onlyOwner {
+        uniswapFactory = _uniswapFactory;
+    }
+
+    function setPolySwapper(address _polySwapper) external onlyOwner {
+        polySwapper = _polySwapper;
     }
 }
