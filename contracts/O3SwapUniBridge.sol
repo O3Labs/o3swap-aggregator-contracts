@@ -74,7 +74,7 @@ contract O3SwapUniBridge is Ownable {
         bytes memory toAssetHash,
         uint polyMinOutAmount,
         uint fee
-    ) external virtual ensure(deadline) returns (bool) {
+    ) external virtual payable ensure(deadline) returns (bool) {
         uint polyAmountIn;
         {
             uint amountOut = _swapExactTokensForTokensSupportingFeeOnTransferTokens(amountIn, uniAmountOutMin, path);
@@ -117,7 +117,7 @@ contract O3SwapUniBridge is Ownable {
         address to,
         uint deadline
     ) external virtual payable ensure(deadline) {
-        uint amountOut = _swapExactETHForTokensSupportingFeeOnTransferTokens(uniAmountOutMin, path);
+        uint amountOut = _swapExactETHForTokensSupportingFeeOnTransferTokens(uniAmountOutMin, path, 0);
         uint feeAmount = amountOut.mul(aggregatorFee).div(FEE_DENOMINATOR);
 
         emit LOG_AGG_SWAP(amountOut, feeAmount);
@@ -139,7 +139,7 @@ contract O3SwapUniBridge is Ownable {
     ) external virtual payable ensure(deadline) returns (bool) {
         uint polyAmountIn;
         {
-            uint amountOut = _swapExactETHForTokensSupportingFeeOnTransferTokens(uniAmountOutMin, path);
+            uint amountOut = _swapExactETHForTokensSupportingFeeOnTransferTokens(uniAmountOutMin, path, fee);
             uint feeAmount = amountOut.mul(aggregatorFee).div(FEE_DENOMINATOR);
             emit LOG_AGG_SWAP(amountOut, feeAmount);
             polyAmountIn = amountOut.sub(feeAmount);
@@ -160,10 +160,12 @@ contract O3SwapUniBridge is Ownable {
 
     function _swapExactETHForTokensSupportingFeeOnTransferTokens(
         uint uniAmountOutMin,
-        address[] calldata path
+        address[] calldata path,
+        uint fee
     ) internal virtual returns (uint) {
         require(path[0] == WETH, 'O3SwapUniBridge: INVALID_PATH');
-        uint amountIn = msg.value;
+        uint amountIn = msg.value.sub(fee);
+        require(amountIn > 0, 'O3SwapUniBridge: INSUFFICIENT_INPUT_AMOUNT');
         IWETH(WETH).deposit{value: amountIn}();
         assert(IWETH(WETH).transfer(UniswapV2Library.pairFor(uniswapFactory, path[0], path[1]), amountIn));
         uint balanceBefore = IERC20(path[path.length - 1]).balanceOf(address(this));
@@ -241,7 +243,7 @@ contract O3SwapUniBridge is Ownable {
         // Allow `swapper contract` to transfer `amount` of `fromAssetHash` on belaof of this contract.
         IERC20(fromAssetHash).approve(polySwapper, amount);
 
-        bool result = ISwapper(polySwapper).swap(
+        bool result = ISwapper(polySwapper).swap{value: fee}(
             fromAssetHash,
             toPoolId,
             toChainId,
