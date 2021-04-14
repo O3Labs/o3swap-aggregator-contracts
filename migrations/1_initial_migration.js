@@ -1,5 +1,7 @@
 const Migrations = artifacts.require("Migrations");
 
-module.exports = function (deployer) {
-  deployer.deploy(Migrations);
+module.exports = function (deployer, network, accounts) {
+  if (!network.includes("mainnet")) {
+    deployer.deploy(Migrations);
+  }
 };

@@ -2,6 +2,7 @@
 
 declare -a contracts=(
     "./contracts/O3SwapETHUniswapBridge.sol"
+    "./contracts/O3SwapBSCPancakeBridge.sol"
 )
 
 for contract in ${contracts[@]}; do

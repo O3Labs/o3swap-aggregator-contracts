@@ -18,6 +18,9 @@ local.properties
 .loadpath
 .recommenders
 
+# Truffle related
+.private_key
+
 # External tool builders
 .externalToolBuilders/
 
