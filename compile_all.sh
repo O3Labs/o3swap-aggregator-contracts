@@ -1,7 +1,7 @@
 #!/bin/bash
 
 declare -a contracts=(
-    "./contracts/O3SwapUniBridge.sol"
+    "./contracts/O3SwapETHUniswapBridge.sol"
 )
 
 for contract in ${contracts[@]}; do

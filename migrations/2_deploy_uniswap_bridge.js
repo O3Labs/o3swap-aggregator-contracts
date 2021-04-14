@@ -1,4 +1,4 @@
-const O3SwapUniBridge = artifacts.require("O3SwapUniBridge");
+const O3SwapETHUniswapBridge = artifacts.require("O3SwapETHUniswapBridge");
 
 module.exports = function (deployer) {
     // Ropsten Testnet
@@ -7,5 +7,5 @@ module.exports = function (deployer) {
     polySwapperV2 = "0x8Baa27e659F55249bb36113346980BFFABC53AeF"
     polySwapperId = 1
 
-    deployer.deploy(O3SwapUniBridge, WETH, UniSwapFactory, polySwapperV2, polySwapperId);
+    deployer.deploy(O3SwapETHUniswapBridge, WETH, UniSwapFactory, polySwapperV2, polySwapperId);
 };
