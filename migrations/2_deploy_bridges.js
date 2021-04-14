@@ -5,7 +5,7 @@ const O3SwapBSCPancakeBridge = artifacts.require("O3SwapBSCPancakeBridge");
 const weth_mainnet = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
 const weth_testnet = "0xc778417E063141139Fce010982780140Aa0cD5Ab";
 
-const wbnb_mainnet = "";
+const wbnb_mainnet = "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c";
 const wbnb_testnet = "0x094616f0bdfb0b526bd735bf66eca0ad254ca81f";
 
 
@@ -47,7 +47,7 @@ function deployETHUniswapMainnet(deployer) {
 function deployBSCPancakeMainnet(deployer) {
     ensureMainnet();
     var WBNB = wbnb_mainnet;
-    var pancakeFactory = "";
+    var pancakeFactory = "0xBCfCcbde45cE874adCB698cC183deBcF17952812";
     var polySwapper = poly_swapper_bsc_mainnet;
     var polySwapperId = 1;
 
