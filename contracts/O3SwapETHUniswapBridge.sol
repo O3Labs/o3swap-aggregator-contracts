@@ -260,13 +260,13 @@ contract O3SwapETHUniswapBridge is Ownable {
         polySwapperId = _id;
     }
 
-    function collect(address token) external {
+    function collect(address token) external onlyOwner {
         if (token == WETH) {
             uint256 wethBalance = IERC20(token).balanceOf(address(this));
             if (wethBalance > 0) {
                 IWETH(WETH).withdraw(wethBalance);
             }
-            TransferHelper.safeTransferETH(owner(), IERC20(token).balanceOf(address(this)));
+            TransferHelper.safeTransferETH(owner(), address(this).balance);
         } else {
             TransferHelper.safeTransfer(token, owner(), IERC20(token).balanceOf(address(this)));
         }

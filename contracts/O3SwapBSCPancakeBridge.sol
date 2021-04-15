@@ -266,7 +266,7 @@ contract O3SwapBSCPancakeBridge is Ownable {
             if (wethBalance > 0) {
                 IWBNB(WBNB).withdraw(wethBalance);
             }
-            TransferHelper.safeTransferETH(owner(), IBEP20(token).balanceOf(address(this)));
+            TransferHelper.safeTransferETH(owner(), address(this).balance);
         } else {
             TransferHelper.safeTransfer(token, owner(), IBEP20(token).balanceOf(address(this)));
         }
