@@ -46,6 +46,26 @@ const network_bsc_testnet = {
   skipDryRun: false
 };
 
+const heco_mainnet_rpc = 'https://http-mainnet.hecochain.com';
+const network_heco_mainnet = {
+  provider: () => new HDWalletProvider(privateKey, heco_mainnet_rpc),
+  network_id: 128,
+  gas: 5500000,
+  confirmations: 0,
+  timeoutBlocks: 200,
+  skipDryRun: false
+};
+
+const heco_testnet_rpc = 'https://http-testnet.hecochain.com';
+const network_heco_testnet = {
+  provider: () => new HDWalletProvider(privateKey, heco_testnet_rpc),
+  network_id: 256,
+  gas: 5500000,
+  confirmations: 1,
+  timeoutBlocks: 200,
+  skipDryRun: false
+};
+
 const network_development = {
   host: "127.0.0.1",
   port: 8545,
@@ -54,11 +74,13 @@ const network_development = {
 
 module.exports = {
   networks: {
-    eth_uniswap_mainnet: network_eth_mainnet,
-    bsc_pancake_mainnet: network_bsc_mainnet,
+    eth_mainnet_uniswap: network_eth_mainnet,
+    bsc_mainnet_pancake: network_bsc_mainnet,
+    heco_mainnet_mdex: network_heco_mainnet,
 
-    eth_uniswap_ropsten: network_eth_ropsten,
-    bsc_pancake_testnet: network_bsc_testnet,
+    eth_ropsten_uniswap: network_eth_ropsten,
+    bsc_testnet_pancake: network_bsc_testnet,
+    heco_testnet_mdex: network_heco_testnet,
 
     development: network_development
   },
