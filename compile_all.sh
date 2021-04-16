@@ -1,11 +1,14 @@
 #!/bin/bash
 
 declare -a contracts=(
-    "./contracts/O3SwapETHUniswapBridge.sol"
-    "./contracts/O3SwapBSCPancakeBridge.sol"
+    "O3SwapETHUniswapBridge.sol"
+    "O3SwapBSCPancakeBridge.sol"
+    "O3SwapHecoMdexBridge.sol"
 )
 
 for contract in ${contracts[@]}; do
-    echo Compiling: $contract
-    solc $contract --bin --abi --optimize -o ./build/contracts --allow-paths . --overwrite
+    solPath="./contracts/"
+    solPath+=$contract
+    printf "%-26s " "$contract"
+    solc $solPath --bin --abi --evm-version istanbul --optimize --optimize-runs 200 -o ./build/contracts --allow-paths . --overwrite
 done
