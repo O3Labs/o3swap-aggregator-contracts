@@ -236,7 +236,7 @@ contract O3SwapBSCPancakeBridge is Ownable {
         uint fee
     ) internal returns (bool) {
         // Allow `swapper contract` to transfer `amount` of `fromAssetHash` on belaof of this contract.
-        IBEP20(fromAssetHash).approve(polySwapper, amount);
+        TransferHelper.safeApprove(fromAssetHash, polySwapper, amount);
 
         bool result = ISwapper(polySwapper).swap{value: fee}(
             fromAssetHash,
