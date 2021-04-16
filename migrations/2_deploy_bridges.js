@@ -54,6 +54,7 @@ module.exports = function (deployer, network, accounts) {
 
 function deployETHUniswapMainnet(deployer, network) {
     ensureMainnet(network);
+
     var WETH = weth_mainnet;
     var UniSwapFactory = uniswap_eth_mainnet_factory;
     var polySwapper = poly_swapper_eth_mainnet;
@@ -73,7 +74,15 @@ function deployBSCPancakeMainnet(deployer, network) {
 }
 
 function deployHecoMdexMainnet(deployer, network) {
+    ensureMainnet(network);
 
+    deployer.deploy(
+        O3SwapHecoMdexBridge,
+        wht_mainnet,
+        mdex_heco_mainnet_factory,
+        poly_swapper_heco_mainnet,
+        1
+    );
 }
 
 /* ------------------------------
