@@ -1,6 +1,6 @@
 # O3 Swap Aggregator Contract Notes
 
-## bsc
+## BSC
 
 ### pancake
 
@@ -17,3 +17,16 @@ router:
 
     mainnet: 0x05fF2B0DB69458A0750badebc4f9e13aDd608C7F
     testnet: 0x07d090e7FcBC6AFaA507A3441C7c5eE507C457e6
+
+## Heco
+
+### mdex
+
+#### init code hash
+
+> source code: contracts/heco/libraries/MdexLibrary.sol
+
+if deploy `mdex`, open `MdexLibrary.sol`, set the right `init code hash`.
+
+    mainnet: 2ad889f82040abccb2649ea6a874796c1601fb67f91a747a80e08860c73ddf24
+    testnet: 7b92ccbc2ceb93d12272829027fa9dd031be006c272ff7407f6f55b41f575d70
