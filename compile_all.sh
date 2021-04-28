@@ -4,6 +4,7 @@ declare -a contracts=(
     "O3SwapETHUniswapBridge.sol"
     "O3SwapBSCPancakeBridge.sol"
     "O3SwapHecoMdexBridge.sol"
+    "O3SwapETHSushiBridge.sol"
 )
 
 for contract in ${contracts[@]}; do

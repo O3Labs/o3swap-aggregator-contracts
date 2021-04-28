@@ -1,6 +1,7 @@
 const O3SwapETHUniswapBridge = artifacts.require("O3SwapETHUniswapBridge");
 const O3SwapBSCPancakeBridge = artifacts.require("O3SwapBSCPancakeBridge");
 const O3SwapHecoMdexBridge = artifacts.require("O3SwapHecoMdexBridge");
+const O3SwapETHSushiBridge = artifacts.require("O3SwapETHSushiBridge");
 
 
 const weth_mainnet = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
@@ -28,6 +29,8 @@ const pancake_bsc_mainnet_factory = "0xBCfCcbde45cE874adCB698cC183deBcF17952812"
 const pancake_bsc_testnet_factory = "0xd417A0A4b65D24f5eBD0898d9028D92E3592afCC";
 const mdex_heco_mainnet_factory = "0xb0b670fc1F7724119963018DB0BfA86aDb22d941";
 const mdex_heco_testnet_factory = "0x42bF55Dfd95bbA679F2B0230A526ff407fd0498C";
+const sushi_eth_mainnet_factory = "0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac";
+const sushi_eth_testnet_factory = "0xc35DADB65012eC5796536bD9864eD8773aBc74C4";
 
 module.exports = function (deployer, network, accounts) {
     switch (network) {
@@ -38,6 +41,9 @@ module.exports = function (deployer, network, accounts) {
             deployBSCPancakeMainnet(deployer, network); break;
         case "heco_mainnet_mdex":
             deployHecoMdexMainnet(deployer, network); break;
+        case "eth_mainnet_sushi":
+            deployETHSushiMainnet(deployer,network); break;
+
         // Testnet
         case "eth_ropsten_uniswap":
             deployETHUniswapRopsten(deployer, network); break;
@@ -45,6 +51,9 @@ module.exports = function (deployer, network, accounts) {
             deployBSCPancakeTestnet(deployer, network); break;
         case "heco_testnet_mdex":
             deployHecoMdexTestnet(deployer, network); break;
+        case "eth_ropsten_sushi":
+            deployETHSushiRopsten(deployer,network);break;
+
     }
 };
 
@@ -62,6 +71,18 @@ function deployETHUniswapMainnet(deployer, network) {
 
     deployer.deploy(O3SwapETHUniswapBridge, WETH, UniSwapFactory, polySwapper, polySwapperId);
 }
+
+function deployETHSushiMainnet(deployer, network) {
+    ensureMainnet(network);
+
+    var WETH = weth_mainnet;
+    var sushiFactory = sushi_eth_mainnet_factory;
+    var polySwapper = poly_swapper_eth_mainnet;
+    var polySwapperId = 1;
+
+    deployer.deploy(O3SwapETHSushiBridge, WETH, sushiFactory, polySwapper, polySwapperId);
+}
+
 
 function deployBSCPancakeMainnet(deployer, network) {
     ensureMainnet(network);
@@ -98,6 +119,17 @@ function deployETHUniswapRopsten(deployer, network) {
     var polySwapperId = 1;
 
     deployer.deploy(O3SwapETHUniswapBridge, WETH, UniSwapFactory, polySwapper, polySwapperId);
+}
+
+function deployETHSushiRopsten(deployer, network) {
+    ensureNotMainnet(network);
+
+    var WETH = weth_testnet;
+    var sushiFactory = sushi_eth_testnet_factory;
+    var polySwapper = poly_swapper_eth_ropsten;
+    var polySwapperId = 1;
+
+    deployer.deploy(O3SwapETHSushiBridge, WETH, sushiFactory, polySwapper, polySwapperId);
 }
 
 function deployBSCPancakeTestnet(deployer, network) {

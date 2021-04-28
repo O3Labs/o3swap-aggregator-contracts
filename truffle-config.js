@@ -77,10 +77,13 @@ module.exports = {
     eth_mainnet_uniswap: network_eth_mainnet,
     bsc_mainnet_pancake: network_bsc_mainnet,
     heco_mainnet_mdex: network_heco_mainnet,
+    eth_mainnet_sushi: network_eth_mainnet,
+
 
     eth_ropsten_uniswap: network_eth_ropsten,
     bsc_testnet_pancake: network_bsc_testnet,
     heco_testnet_mdex: network_heco_testnet,
+    eth_ropsten_sushi: network_eth_ropsten,
 
     development: network_development
   },
