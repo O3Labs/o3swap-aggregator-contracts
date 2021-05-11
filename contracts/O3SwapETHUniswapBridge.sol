@@ -40,6 +40,10 @@ contract O3SwapETHUniswapBridge is Ownable {
         address _swapper,
         uint _swapperId
     ) public {
+        require(_weth != address(0), "O3SwapETHUniswapBridge: ZERO_WETH_ADDRESS");
+        require(_factory != address(0), "O3SwapETHUniswapBridge: ZERO_FACTORY_ADDRESS");
+        require(_swapper != address(0), "O3SwapETHUniswapBridge: ZERO_SWAPPER_ADDRESS");
+
         WETH = _weth;
         uniswapFactory = _factory;
         polySwapper = _swapper;

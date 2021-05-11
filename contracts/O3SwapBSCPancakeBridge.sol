@@ -40,6 +40,10 @@ contract O3SwapBSCPancakeBridge is Ownable {
         address _swapper,
         uint _swapperId
     ) public {
+        require(_wbnb != address(0), "O3SwapBSCPancakeBridge: ZERO_WBNB_ADDRESS");
+        require(_factory != address(0), "O3SwapBSCPancakeBridge: ZERO_FACTORY_ADDRESS");
+        require(_swapper != address(0), "O3SwapBSCPancakeBridge: ZERO_SWAPPER_ADDRESS");
+
         WBNB = _wbnb;
         pancakeFactory = _factory;
         polySwapper = _swapper;

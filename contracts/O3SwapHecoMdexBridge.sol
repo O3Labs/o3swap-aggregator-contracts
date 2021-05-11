@@ -40,6 +40,10 @@ contract O3SwapHecoMdexBridge is Ownable {
         address _swapper,
         uint _swapperId
     ) public {
+        require(_wht != address(0), "O3SwapHecoMdexBridge: ZERO_WHT_ADDRESS");
+        require(_factory != address(0), "O3SwapHecoMdexBridge: ZERO_FACTORY_ADDRESS");
+        require(_swapper != address(0), "O3SwapHecoMdexBridge: ZERO_SWAPPER_ADDRESS");
+
         WHT = _wht;
         mdexFactory = _factory;
         polySwapper = _swapper;
