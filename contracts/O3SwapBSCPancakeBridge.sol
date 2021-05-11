@@ -3,6 +3,7 @@
 pragma solidity =0.6.12;
 
 import "./utils/Ownable.sol";
+import "./bsc/interfaces/IPancakeFactory.sol";
 import "./bsc/libraries/PancakeLibrary.sol";
 import './libraries/TransferHelper.sol';
 import "./bsc/interfaces/IWBNB.sol";
@@ -210,6 +211,7 @@ contract O3SwapBSCPancakeBridge is Ownable {
         for (uint i; i < path.length - 1; i++) {
             (address input, address output) = (path[i], path[i + 1]);
             (address token0,) = PancakeLibrary.sortTokens(input, output);
+            require(IPancakeFactory(pancakeFactory).getPair(input, output) != address(0), "O3SwapBSCPancakeBridge: PAIR_NOT_EXIST");
             IPancakePair pair = IPancakePair(PancakeLibrary.pairFor(pancakeFactory, input, output));
             uint amountInput;
             uint amountOutput;

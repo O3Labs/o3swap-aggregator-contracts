@@ -3,6 +3,7 @@
 pragma solidity =0.6.12;
 
 import "./utils/Ownable.sol";
+import "./eth/interfaces/IUniswapV2Factory.sol";
 import "./eth/libraries/UniswapV2Library.sol";
 import './libraries/TransferHelper.sol';
 import "./eth/interfaces/IWETH.sol";
@@ -210,6 +211,7 @@ contract O3SwapETHUniswapBridge is Ownable {
         for (uint i; i < path.length - 1; i++) {
             (address input, address output) = (path[i], path[i + 1]);
             (address token0,) = UniswapV2Library.sortTokens(input, output);
+            require(IUniswapV2Factory(uniswapFactory).getPair(input, output) != address(0), "O3SwapETHUniswapBridge: PAIR_NOT_EXIST");
             IUniswapV2Pair pair = IUniswapV2Pair(UniswapV2Library.pairFor(uniswapFactory, input, output));
             uint amountInput;
             uint amountOutput;

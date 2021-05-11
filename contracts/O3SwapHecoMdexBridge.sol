@@ -3,6 +3,7 @@
 pragma solidity =0.6.12;
 
 import "./utils/Ownable.sol";
+import "./heco/interfaces/IMdexFactory.sol";
 import "./heco/libraries/MdexLibrary.sol";
 import './libraries/TransferHelper.sol';
 import "./heco/interfaces/IWHT.sol";
@@ -210,6 +211,7 @@ contract O3SwapHecoMdexBridge is Ownable {
         for (uint i; i < path.length - 1; i++) {
             (address input, address output) = (path[i], path[i + 1]);
             (address token0,) = MdexLibrary.sortTokens(input, output);
+            require(IMdexFactory(mdexFactory).getPair(input, output) != address(0), "O3SwapHecoMdexBridge: PAIR_NOT_EXIST");
             IMdexPair pair = IMdexPair(MdexLibrary.pairFor(mdexFactory, input, output));
             uint amountInput;
             uint amountOutput;
