@@ -128,7 +128,7 @@ contract O3SwapOECswapBridge is Ownable {
         TransferHelper.safeTransfer(path[path.length - 1], to, adjustedAmountOut);
     }
 
-    function swapExactETHForTokensSupportingFeeOnTransferTokensCrossChain(
+    function swapExactOKTForTokensSupportingFeeOnTransferTokensCrossChain(
         uint swapAmountOutMin,
         address[] calldata path,
         bytes memory to,
