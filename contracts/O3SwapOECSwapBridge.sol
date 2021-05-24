@@ -22,7 +22,8 @@ contract O3SwapOECswapBridge is Ownable {
     );
 
     address public WOKT;
-    address public uniswapFactory;
+    mapping(uint => address) swapFactoryMap;
+    mapping(uint => string) swapCodeHash;
     address public polySwapper;
     uint public polySwapperId;
 
@@ -55,9 +56,10 @@ contract O3SwapOECswapBridge is Ownable {
         uint swapAmountOutMin,
         address[] calldata path,
         address to,
-        uint deadline
+        uint deadline,
+        uint swapIndex
     ) external virtual ensure(deadline) {
-        uint amountOut = _swapExactTokensForTokensSupportingFeeOnTransferTokens(amountIn, swapAmountOutMin, path);
+        uint amountOut = _swapExactTokensForTokensSupportingFeeOnTransferTokens(amountIn, swapAmountOutMin, path, swapIndex);
         uint feeAmount = amountOut.mul(aggregatorFee).div(FEE_DENOMINATOR);
 
         emit LOG_AGG_SWAP(amountOut, feeAmount);
@@ -76,11 +78,12 @@ contract O3SwapOECswapBridge is Ownable {
         uint64 toChainId,
         bytes memory toAssetHash,
         uint polyMinOutAmount,
-        uint fee
+        uint fee,
+        uint swapIndex
     ) external virtual payable ensure(deadline) returns (bool) {
         uint polyAmountIn;
         {
-            uint amountOut = _swapExactTokensForTokensSupportingFeeOnTransferTokens(amountIn, swapAmountOutMin, path);
+            uint amountOut = _swapExactTokensForTokensSupportingFeeOnTransferTokens(amountIn, swapAmountOutMin, path, swapIndex);
             uint feeAmount = amountOut.mul(aggregatorFee).div(FEE_DENOMINATOR);
             emit LOG_AGG_SWAP(amountOut, feeAmount);
             polyAmountIn = amountOut.sub(feeAmount);
@@ -101,13 +104,15 @@ contract O3SwapOECswapBridge is Ownable {
     function _swapExactTokensForTokensSupportingFeeOnTransferTokens(
         uint amountIn,
         uint amountOutMin,
-        address[] calldata path
+        address[] calldata path,
+        uint swapIndex
     ) internal virtual returns (uint) {
+        require(swapFactoryMap[swapIndex] != address(0), "O3SwapOECswapBridge: ZERO_FACTORY_ADDRESS");
         TransferHelper.safeTransferFrom(
-            path[0], msg.sender, UniswapV2Library.pairFor(uniswapFactory, path[0], path[1]), amountIn
+            path[0], msg.sender, UniswapV2Library.pairFor(swapFactoryMap[swapIndex] , path[0], path[1], swapCodeHash[swapIndex]), amountIn
         );
         uint balanceBefore = IERC20(path[path.length - 1]).balanceOf(address(this));
-        _swapSupportingFeeOnTransferTokens(path, address(this));
+        _swapSupportingFeeOnTransferTokens(path, address(this), swapIndex);
         uint amountOut = IERC20(path[path.length - 1]).balanceOf(address(this)).sub(balanceBefore);
         require(amountOut >= amountOutMin, 'O3SwapOECswapBridge: INSUFFICIENT_OUTPUT_AMOUNT');
         return amountOut;
@@ -162,15 +167,17 @@ contract O3SwapOECswapBridge is Ownable {
     function _swapExactOKTForTokensSupportingFeeOnTransferTokens(
         uint swapAmountOutMin,
         address[] calldata path,
-        uint fee
+        uint fee,
+        uint swapIndex
     ) internal virtual returns (uint) {
         require(path[0] == WOKT, 'O3SwapOECswapBridge: INVALID_PATH');
         uint amountIn = msg.value.sub(fee);
         require(amountIn > 0, 'O3SwapOECswapBridge: INSUFFICIENT_INPUT_AMOUNT');
         IWOKT(WOKT).deposit{value: amountIn}();
-        assert(IWOKT(WOKT).transfer(UniswapV2Library.pairFor(uniswapFactory, path[0], path[1]), amountIn));
+        require(swapFactoryMap[swapIndex] != address(0), "O3SwapOECswapBridge: ZERO_FACTORY_ADDRESS");
+        assert(IWOKT(WOKT).transfer(UniswapV2Library.pairFor(swapFactoryMap[swapIndex], path[0], path[1]), amountIn, swapCodeHash[swapIndex]));
         uint balanceBefore = IERC20(path[path.length - 1]).balanceOf(address(this));
-        _swapSupportingFeeOnTransferTokens(path, address(this));
+        _swapSupportingFeeOnTransferTokens(path, address(this), swapIndex);
         uint amountOut = IERC20(path[path.length - 1]).balanceOf(address(this)).sub(balanceBefore);
         require(amountOut >= swapAmountOutMin, 'O3SwapOECswapBridge: INSUFFICIENT_OUTPUT_AMOUNT');
         return amountOut;
@@ -196,14 +203,16 @@ contract O3SwapOECswapBridge is Ownable {
     function _swapExactTokensForOKTSupportingFeeOnTransferTokens(
         uint amountIn,
         uint swapAmountOutMin,
-        address[] calldata path
+        address[] calldata path,
+        uint swapIndex
     ) internal virtual returns (uint) {
         require(path[path.length - 1] == WOKT, 'O3SwapOECswapBridge: INVALID_PATH');
+        require(swapFactoryMap[swapIndex] != address(0), "O3SwapOECswapBridge: ZERO_FACTORY_ADDRESS");
         TransferHelper.safeTransferFrom(
-            path[0], msg.sender, UniswapV2Library.pairFor(uniswapFactory, path[0], path[1]), amountIn
+            path[0], msg.sender, UniswapV2Library.pairFor(swapFactoryMap[swapIndex], path[0], path[1], swapCodeHash[swapIndex]), amountIn
         );
         uint balanceBefore = IERC20(WOKT).balanceOf(address(this));
-        _swapSupportingFeeOnTransferTokens(path, address(this));
+        _swapSupportingFeeOnTransferTokens(path, address(this), swapIndex);
         uint amountOut = IERC20(WOKT).balanceOf(address(this)).sub(balanceBefore);
         require(amountOut >= swapAmountOutMin, 'O3SwapOECswapBridge: INSUFFICIENT_OUTPUT_AMOUNT');
         return amountOut;
@@ -211,12 +220,13 @@ contract O3SwapOECswapBridge is Ownable {
 
     // **** SWAP (supporting fee-on-transfer tokens) ****
     // requires the initial amount to have already been sent to the first pair
-    function _swapSupportingFeeOnTransferTokens(address[] memory path, address _to) internal virtual {
+    function _swapSupportingFeeOnTransferTokens(address[] memory path, address _to, uint swapIndex) internal virtual {
         for (uint i; i < path.length - 1; i++) {
             (address input, address output) = (path[i], path[i + 1]);
             (address token0,) = UniswapV2Library.sortTokens(input, output);
-            require(IUniswapV2Factory(uniswapFactory).getPair(input, output) != address(0), "O3SwapOECswapBridge: PAIR_NOT_EXIST");
-            IUniswapV2Pair pair = IUniswapV2Pair(UniswapV2Library.pairFor(uniswapFactory, input, output));
+            require(swapFactoryMap[swapIndex] != address(0), "O3SwapOECswapBridge: ZERO_FACTORY_ADDRESS");
+            require(swapFactoryMap[swapIndex].getPair(input, output) != address(0), "O3SwapOECswapBridge: PAIR_NOT_EXIST");
+            IUniswapV2Pair pair = IUniswapV2Pair(UniswapV2Library.pairFor(swapFactoryMap[swapIndex], input, output, swapCodeHash[swapIndex]));
             uint amountInput;
             uint amountOutput;
             { // scope to avoid stack too deep errors
@@ -226,7 +236,7 @@ contract O3SwapOECswapBridge is Ownable {
             amountOutput = UniswapV2Library.getAmountOut(amountInput, reserveInput, reserveOutput);
             }
             (uint amount0Out, uint amount1Out) = input == token0 ? (uint(0), amountOutput) : (amountOutput, uint(0));
-            address to = i < path.length - 2 ? UniswapV2Library.pairFor(uniswapFactory, output, path[i + 2]) : _to;
+            address to = i < path.length - 2 ? UniswapV2Library.pairFor(swapFactoryMap[swapIndex], output, path[i + 2], swapCodeHash[swapIndex]) : _to;
             pair.swap(amount0Out, amount1Out, to, new bytes(0));
         }
     }
@@ -282,8 +292,8 @@ contract O3SwapOECswapBridge is Ownable {
         aggregatorFee = _fee;
     }
 
-    function setUniswapFactory(address _factory) external onlyOwner {
-        uniswapFactory = _factory;
+    function setUniswapFactory(address _factory, uint index) external onlyOwner {
+        swapFactoryMap[index] = _factory;
     }
 
     function setPolySwapper(address _swapper) external onlyOwner {
