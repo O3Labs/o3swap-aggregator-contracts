@@ -33,6 +33,32 @@ if deploy `mdex`, open `MdexLibrary.sol`, set the right `init code hash`.
 
 ## OEC
 
-## sushi
+### sushi
 
-> source code: 
+> source code: https://github.com/sushiswap/sushiswap/blob/master/contracts/uniswapv2/libraries/UniswapV2Library.sol
+
+invoke setSwapInitCodeHash function:  index => 1
+    mainnet: initCodeHash => '0xe18a34eb0e04b04f7a0ac29a6e80748dca96319b42c54d679cb821dca90c6303'
+             factory => 0xc35DADB65012eC5796536bD9864eD8773aBc74C4
+    testnet: initCodeHash => ?
+             factory => 0xc35DADB65012eC5796536bD9864eD8773aBc74C4  
+
+### AIswap
+
+> source code: https://github.com/aiswap/contracts/blob/master/AiSwap.sol
+
+invode setSwapInitCodeHash function: index => 2
+    mainnet: initCodeHash => '96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f'
+             facotry => ?
+
+https://github.com/aiswap/contracts No info about contract on OkexChain
+
+### sakeswap
+
+ > source code: https://github.com/Sakeswap/sakeswap-protocol/blob/master/contracts/sakeswap/libraries/SakeSwapLibrary.sol
+
+ invoke setSwapInitCodeHash function: index => 3
+    mainnet: initCodeHash =>  '1c6b37d5ff4429c6e6a1ecefdb1580c33035e38b07d7e43c95f9e1677ba2cbce'
+             factory => ?
+
+https://github.com/Sakeswap/sakeswap-protocol No info about contract on OKexChain
