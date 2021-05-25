@@ -23,7 +23,7 @@ contract O3SwapOECswapBridge is Ownable {
 
     address public WOKT;
     mapping(uint => address) swapFactoryMap;
-    mapping(uint => string) swapCodeHash;
+    mapping(uint => bytes32) swapCodeHash;
     address public polySwapper;
     uint public polySwapperId;
 
@@ -292,8 +292,12 @@ contract O3SwapOECswapBridge is Ownable {
         aggregatorFee = _fee;
     }
 
-    function setUniswapFactory(address _factory, uint index) external onlyOwner {
+    function setSwapFactory(uint index, address _factory) external onlyOwner {
         swapFactoryMap[index] = _factory;
+    }
+
+    function setSwapInitCodeHash(uint index, bytes32 _codeHash) external onlyOwner{
+        swapCodeHash[index] = _codeHash;
     }
 
     function setPolySwapper(address _swapper) external onlyOwner {
