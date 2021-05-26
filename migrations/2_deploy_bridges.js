@@ -24,7 +24,7 @@ const poly_swapper_heco_testnet = "0x0488ADd7e3D4C58acb8DF7c487dAfC48e3224833";
 
 const uniswap_eth_mainnet_factory = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f";
 const uniswap_eth_testnet_factory = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f";
-const pancake_bsc_mainnet_factory = "0xBCfCcbde45cE874adCB698cC183deBcF17952812";
+const pancake_bsc_mainnet_factory = "0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73";
 const pancake_bsc_testnet_factory = "0xd417A0A4b65D24f5eBD0898d9028D92E3592afCC";
 const mdex_heco_mainnet_factory = "0xb0b670fc1F7724119963018DB0BfA86aDb22d941";
 const mdex_heco_testnet_factory = "0x42bF55Dfd95bbA679F2B0230A526ff407fd0498C";
