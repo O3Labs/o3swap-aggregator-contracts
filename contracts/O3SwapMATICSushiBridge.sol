@@ -21,27 +21,20 @@ contract O3SwapMATICSushiBridge is Ownable {
 
     address public WMATIC;
     address public uniswapFactory;
-    address public polySwapper;
-    uint public polySwapperId;
-
     uint256 public aggregatorFee = 3 * 10 ** 7; // Default to 0.3%
     uint256 public constant FEE_DENOMINATOR = 10 ** 10;
 
     modifier ensure(uint deadline) {
-        require(deadline >= block.timestamp, 'O3SwapETHUniswapBridge: EXPIRED');
+        require(deadline >= block.timestamp, 'O3SwapMATICUniswapBridge: EXPIRED');
         _;
     }
 
     constructor (
         address _wmatic,
-        address _factory,
-        address _swapper,
-        uint _swapperId
+        address _factory
     ) public {
         WMATIC = _wmatic;
         uniswapFactory = _factory;
-        polySwapper = _swapper;
-        polySwapperId = _swapperId;
     }
 
     function swapExactTokensForTokensSupportingFeeOnTransferTokens(
@@ -71,17 +64,17 @@ contract O3SwapMATICSushiBridge is Ownable {
         uint balanceBefore = IERC20Uniswap(path[path.length - 1]).balanceOf(address(this));
         _swapSupportingFeeOnTransferTokens(path, address(this));
         uint amountOut = IERC20Uniswap(path[path.length - 1]).balanceOf(address(this)).sub(balanceBefore);
-        require(amountOut >= amountOutMin, 'O3SwapETHUniswapBridge: INSUFFICIENT_OUTPUT_AMOUNT');
+        require(amountOut >= amountOutMin, 'O3SwapMATICUniswapBridge: INSUFFICIENT_OUTPUT_AMOUNT');
         return amountOut;
     }
 
-    function swapExactETHForTokensSupportingFeeOnTransferTokens(
+    function swapExactMATICForTokensSupportingFeeOnTransferTokens(
         uint swapAmountOutMin,
         address[] calldata path,
         address to,
         uint deadline
     ) external virtual payable ensure(deadline) {
-        uint amountOut = _swapExactETHForTokensSupportingFeeOnTransferTokens(swapAmountOutMin, path, 0);
+        uint amountOut = _swapExactMATICForTokensSupportingFeeOnTransferTokens(swapAmountOutMin, path, 0);
         uint feeAmount = amountOut.mul(aggregatorFee).div(FEE_DENOMINATOR);
 
         emit LOG_AGG_SWAP(amountOut, feeAmount);
@@ -90,31 +83,31 @@ contract O3SwapMATICSushiBridge is Ownable {
         TransferHelper.safeTransfer(path[path.length - 1], to, adjustedAmountOut);
     }
 
-    function _swapExactETHForTokensSupportingFeeOnTransferTokens(
+    function _swapExactMATICForTokensSupportingFeeOnTransferTokens(
         uint swapAmountOutMin,
         address[] calldata path,
         uint fee
     ) internal virtual returns (uint) {
-        require(path[0] == WMATIC, 'O3SwapETHUniswapBridge: INVALID_PATH');
+        require(path[0] == WMATIC, 'O3SwapMATICUniswapBridge: INVALID_PATH');
         uint amountIn = msg.value.sub(fee);
-        require(amountIn > 0, 'O3SwapETHUniswapBridge: INSUFFICIENT_INPUT_AMOUNT');
+        require(amountIn > 0, 'O3SwapMATICUniswapBridge: INSUFFICIENT_INPUT_AMOUNT');
         IWMATIC(WMATIC).deposit{value: amountIn}();
         assert(IWMATIC(WMATIC).transfer(UniswapV2Library.pairFor(uniswapFactory, path[0], path[1]), amountIn));
         uint balanceBefore = IERC20Uniswap(path[path.length - 1]).balanceOf(address(this));
         _swapSupportingFeeOnTransferTokens(path, address(this));
         uint amountOut = IERC20Uniswap(path[path.length - 1]).balanceOf(address(this)).sub(balanceBefore);
-        require(amountOut >= swapAmountOutMin, 'O3SwapETHUniswapBridge: INSUFFICIENT_OUTPUT_AMOUNT');
+        require(amountOut >= swapAmountOutMin, 'O3SwapMATICUniswapBridge: INSUFFICIENT_OUTPUT_AMOUNT');
         return amountOut;
     }
 
-    function swapExactTokensForETHSupportingFeeOnTransferTokens(
+    function swapExactTokensForMATICSupportingFeeOnTransferTokens(
         uint amountIn,
         uint swapAmountOutMin,
         address[] calldata path,
         address to,
         uint deadline
     ) external virtual ensure(deadline) {
-        uint amountOut = _swapExactTokensForETHSupportingFeeOnTransferTokens(amountIn, swapAmountOutMin, path);
+        uint amountOut = _swapExactTokensForMATICSupportingFeeOnTransferTokens(amountIn, swapAmountOutMin, path);
         uint feeAmount = amountOut.mul(aggregatorFee).div(FEE_DENOMINATOR);
 
         emit LOG_AGG_SWAP(amountOut, feeAmount);
@@ -124,19 +117,19 @@ contract O3SwapMATICSushiBridge is Ownable {
         TransferHelper.safeTransferETH(to, adjustedAmountOut);
     }
 
-    function _swapExactTokensForETHSupportingFeeOnTransferTokens(
+    function _swapExactTokensForMATICSupportingFeeOnTransferTokens(
         uint amountIn,
         uint swapAmountOutMin,
         address[] calldata path
     ) internal virtual returns (uint) {
-        require(path[path.length - 1] == WMATIC, 'O3SwapETHUniswapBridge: INVALID_PATH');
+        require(path[path.length - 1] == WMATIC, 'O3SwapMATICUniswapBridge: INVALID_PATH');
         TransferHelper.safeTransferFrom(
             path[0], msg.sender, UniswapV2Library.pairFor(uniswapFactory, path[0], path[1]), amountIn
         );
         uint balanceBefore = IERC20Uniswap(WMATIC).balanceOf(address(this));
         _swapSupportingFeeOnTransferTokens(path, address(this));
         uint amountOut = IERC20Uniswap(WMATIC).balanceOf(address(this)).sub(balanceBefore);
-        require(amountOut >= swapAmountOutMin, 'O3SwapETHUniswapBridge: INSUFFICIENT_OUTPUT_AMOUNT');
+        require(amountOut >= swapAmountOutMin, 'O3SwapMATICUniswapBridge: INSUFFICIENT_OUTPUT_AMOUNT');
         return amountOut;
     }
 
