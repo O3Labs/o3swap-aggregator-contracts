@@ -8,6 +8,7 @@ import './libraries/TransferHelper.sol';
 import "./matic/interfaces/IERC20.sol";
 import "./matic/interfaces/IWMATIC.sol";
 import "./libraries/SafeMath.sol";
+import "./interfaces/ISwapper.sol";
 import "./libraries/Convert.sol";
 
 contract O3SwapMATICSushiBridge is Ownable {
@@ -21,6 +22,8 @@ contract O3SwapMATICSushiBridge is Ownable {
 
     address public WMATIC;
     address public uniswapFactory;
+    address public polySwapper;
+    uint public polySwapperId;
     uint256 public aggregatorFee = 3 * 10 ** 7; // Default to 0.3%
     uint256 public constant FEE_DENOMINATOR = 10 ** 10;
 
@@ -31,10 +34,14 @@ contract O3SwapMATICSushiBridge is Ownable {
 
     constructor (
         address _wmatic,
-        address _factory
+        address _factory,
+        address _swapper,
+        uint _swapperId
     ) public {
         WMATIC = _wmatic;
         uniswapFactory = _factory;
+        polySwapper = _swapper;
+        polySwapperId = _swapperId;
     }
 
     function swapExactTokensForTokensSupportingFeeOnTransferTokens(
@@ -51,6 +58,38 @@ contract O3SwapMATICSushiBridge is Ownable {
 
         uint adjustedAmountOut = amountOut.sub(feeAmount);
         TransferHelper.safeTransfer(path[path.length - 1], to, adjustedAmountOut);
+    }
+
+    function swapExactTokensForTokensSupportingFeeOnTransferTokensCrossChain(
+        uint amountIn,
+        uint swapAmountOutMin,
+        address[] calldata path,
+        bytes memory to,
+        uint deadline,
+        uint64 toPoolId,
+        uint64 toChainId,
+        bytes memory toAssetHash,
+        uint polyMinOutAmount,
+        uint fee
+    ) external virtual payable ensure(deadline) returns (bool) {
+        uint polyAmountIn;
+        {
+            uint amountOut = _swapExactTokensForTokensSupportingFeeOnTransferTokens(amountIn, swapAmountOutMin, path);
+            uint feeAmount = amountOut.mul(aggregatorFee).div(FEE_DENOMINATOR);
+            emit LOG_AGG_SWAP(amountOut, feeAmount);
+            polyAmountIn = amountOut.sub(feeAmount);
+        }
+
+        return _cross(
+            path[path.length - 1],
+            toPoolId,
+            toChainId,
+            toAssetHash,
+            to,
+            polyAmountIn,
+            polyMinOutAmount,
+            fee
+        );
     }
 
     function _swapExactTokensForTokensSupportingFeeOnTransferTokens(
@@ -82,6 +121,37 @@ contract O3SwapMATICSushiBridge is Ownable {
         uint adjustedAmountOut = amountOut.sub(feeAmount);
         TransferHelper.safeTransfer(path[path.length - 1], to, adjustedAmountOut);
     }
+
+    function swapExactMATICForTokensSupportingFeeOnTransferTokensCrossChain(
+        uint swapAmountOutMin,
+        address[] calldata path,
+        bytes memory to,
+        uint deadline,
+        uint64 toPoolId,
+        uint64 toChainId,
+        bytes memory toAssetHash,
+        uint polyMinOutAmount,
+        uint fee
+    ) external virtual payable ensure(deadline) returns (bool) {
+        uint polyAmountIn;
+        {
+            uint amountOut = _swapExactMATICForTokensSupportingFeeOnTransferTokens(swapAmountOutMin, path, fee);
+            uint feeAmount = amountOut.mul(aggregatorFee).div(FEE_DENOMINATOR);
+            emit LOG_AGG_SWAP(amountOut, feeAmount);
+            polyAmountIn = amountOut.sub(feeAmount);
+        }
+
+        return _cross(
+            path[path.length - 1],
+            toPoolId,
+            toChainId,
+            toAssetHash,
+            to,
+            polyAmountIn,
+            polyMinOutAmount,
+            fee
+        );
+    }    
 
     function _swapExactMATICForTokensSupportingFeeOnTransferTokens(
         uint swapAmountOutMin,
@@ -154,7 +224,40 @@ contract O3SwapMATICSushiBridge is Ownable {
         }
     }
 
+    function _cross(
+        address fromAssetHash,
+        uint64 toPoolId,
+        uint64 toChainId,
+        bytes memory toAssetHash,
+        bytes memory toAddress,
+        uint amount,
+        uint minOutAmount,
+        uint fee
+    ) internal returns (bool) {
+        // Allow `swapper contract` to transfer `amount` of `fromAssetHash` on belaof of this contract.
+        TransferHelper.safeApprove(fromAssetHash, polySwapper, amount);
+
+        bool result = ISwapper(polySwapper).swap{value: fee}(
+            fromAssetHash,
+            toPoolId,
+            toChainId,
+            toAssetHash,
+            toAddress,
+            amount,
+            minOutAmount,
+            fee,
+            polySwapperId
+        );
+        require(result, "POLY CROSSCHAIN ERROR");
+
+        return result;
+    }
+
     receive() external payable { }
+
+    function setPolySwapperId(uint _id) external onlyOwner {
+        polySwapperId = _id;
+    }
 
     function collect(address token) external {
         if (token == WMATIC) {
@@ -174,6 +277,10 @@ contract O3SwapMATICSushiBridge is Ownable {
 
     function setUniswapFactory(address _factory) external onlyOwner {
         uniswapFactory = _factory;
+    }
+
+    function setPolySwapper(address _swapper) external onlyOwner {
+        polySwapper = _swapper;
     }
 
     function setWMATIC(address _wmatic) external onlyOwner {
