@@ -66,6 +66,28 @@ const network_heco_testnet = {
   skipDryRun: false
 };
 
+const polygon_mainnet_rpc = 'https://rpc-mainnet.maticvigil.com';
+const network_polygon_mainnet = {
+  provider: () => new HDWalletProvider(privateKey, polygon_mainnet_rpc),
+  network_id: 137,
+  gas: 5500000,
+  gasPrice: 5 * 10**9,
+  confirmations: 0,
+  timeoutBlocks: 200,
+  skipDryRun: false
+};
+
+const polygon_testnet_rpc = 'https://rpc-mumbai.maticvigil.com';
+const network_polygon_testnet = {
+  provider: () => new HDWalletProvider(privateKey, polygon_testnet_rpc),
+  network_id: 80001,
+  gas: 5500000,
+  gasPrice: 5 * 10**9,
+  confirmations: 0,
+  timeoutBlocks: 200,
+  skipDryRun: false
+};
+
 const network_development = {
   host: "127.0.0.1",
   port: 8545,
@@ -77,10 +99,12 @@ module.exports = {
     eth_mainnet_uniswap: network_eth_mainnet,
     bsc_mainnet_pancake: network_bsc_mainnet,
     heco_mainnet_mdex: network_heco_mainnet,
+    polygon_mainnet_quickswap: network_polygon_mainnet,
 
     eth_ropsten_uniswap: network_eth_ropsten,
     bsc_testnet_pancake: network_bsc_testnet,
     heco_testnet_mdex: network_heco_testnet,
+    polygon_testnet_quickswap: network_polygon_testnet,
 
     development: network_development
   },
