@@ -11,7 +11,7 @@ import "./libraries/SafeMath.sol";
 import "./interfaces/ISwapper.sol";
 import "./libraries/Convert.sol";
 
-contract O3SwapMATICSushiBridge is Ownable {
+contract O3SwapPolygonQuickSwapBridge is Ownable {
     using SafeMath for uint256;
     using Convert for bytes;
 
@@ -28,7 +28,7 @@ contract O3SwapMATICSushiBridge is Ownable {
     uint256 public constant FEE_DENOMINATOR = 10 ** 10;
 
     modifier ensure(uint deadline) {
-        require(deadline >= block.timestamp, 'O3SwapMATICUniswapBridge: EXPIRED');
+        require(deadline >= block.timestamp, 'O3SwapPolygonQuickSwapBridge: EXPIRED');
         _;
     }
 
@@ -103,7 +103,7 @@ contract O3SwapMATICSushiBridge is Ownable {
         uint balanceBefore = IERC20Uniswap(path[path.length - 1]).balanceOf(address(this));
         _swapSupportingFeeOnTransferTokens(path, address(this));
         uint amountOut = IERC20Uniswap(path[path.length - 1]).balanceOf(address(this)).sub(balanceBefore);
-        require(amountOut >= amountOutMin, 'O3SwapMATICUniswapBridge: INSUFFICIENT_OUTPUT_AMOUNT');
+        require(amountOut >= amountOutMin, 'O3SwapPolygonQuickSwapBridge: INSUFFICIENT_OUTPUT_AMOUNT');
         return amountOut;
     }
 
@@ -158,15 +158,15 @@ contract O3SwapMATICSushiBridge is Ownable {
         address[] calldata path,
         uint fee
     ) internal virtual returns (uint) {
-        require(path[0] == WMATIC, 'O3SwapMATICUniswapBridge: INVALID_PATH');
+        require(path[0] == WMATIC, 'O3SwapPolygonQuickSwapBridge: INVALID_PATH');
         uint amountIn = msg.value.sub(fee);
-        require(amountIn > 0, 'O3SwapMATICUniswapBridge: INSUFFICIENT_INPUT_AMOUNT');
+        require(amountIn > 0, 'O3SwapPolygonQuickSwapBridge: INSUFFICIENT_INPUT_AMOUNT');
         IWMATIC(WMATIC).deposit{value: amountIn}();
         assert(IWMATIC(WMATIC).transfer(UniswapV2Library.pairFor(uniswapFactory, path[0], path[1]), amountIn));
         uint balanceBefore = IERC20Uniswap(path[path.length - 1]).balanceOf(address(this));
         _swapSupportingFeeOnTransferTokens(path, address(this));
         uint amountOut = IERC20Uniswap(path[path.length - 1]).balanceOf(address(this)).sub(balanceBefore);
-        require(amountOut >= swapAmountOutMin, 'O3SwapMATICUniswapBridge: INSUFFICIENT_OUTPUT_AMOUNT');
+        require(amountOut >= swapAmountOutMin, 'O3SwapPolygonQuickSwapBridge: INSUFFICIENT_OUTPUT_AMOUNT');
         return amountOut;
     }
 
@@ -192,14 +192,14 @@ contract O3SwapMATICSushiBridge is Ownable {
         uint swapAmountOutMin,
         address[] calldata path
     ) internal virtual returns (uint) {
-        require(path[path.length - 1] == WMATIC, 'O3SwapMATICUniswapBridge: INVALID_PATH');
+        require(path[path.length - 1] == WMATIC, 'O3SwapPolygonQuickSwapBridge: INVALID_PATH');
         TransferHelper.safeTransferFrom(
             path[0], msg.sender, UniswapV2Library.pairFor(uniswapFactory, path[0], path[1]), amountIn
         );
         uint balanceBefore = IERC20Uniswap(WMATIC).balanceOf(address(this));
         _swapSupportingFeeOnTransferTokens(path, address(this));
         uint amountOut = IERC20Uniswap(WMATIC).balanceOf(address(this)).sub(balanceBefore);
-        require(amountOut >= swapAmountOutMin, 'O3SwapMATICUniswapBridge: INSUFFICIENT_OUTPUT_AMOUNT');
+        require(amountOut >= swapAmountOutMin, 'O3SwapPolygonQuickSwapBridge: INSUFFICIENT_OUTPUT_AMOUNT');
         return amountOut;
     }
 
