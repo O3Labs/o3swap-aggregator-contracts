@@ -3,10 +3,10 @@
 pragma solidity =0.6.12;
 
 import "./utils/Ownable.sol";
-import "./matic/libraries/UniswapV2Library.sol";
+import "./polygon/libraries/UniswapV2Library.sol";
 import './libraries/TransferHelper.sol';
-import "./matic/interfaces/IERC20.sol";
-import "./matic/interfaces/IWMATIC.sol";
+import "./polygon/interfaces/IWMATIC.sol";
+import "./polygon/interfaces/IERC20.sol";
 import "./libraries/SafeMath.sol";
 import "./interfaces/ISwapper.sol";
 import "./libraries/Convert.sol";
@@ -24,6 +24,7 @@ contract O3SwapPolygonQuickSwapBridge is Ownable {
     address public uniswapFactory;
     address public polySwapper;
     uint public polySwapperId;
+
     uint256 public aggregatorFee = 3 * 10 ** 7; // Default to 0.3%
     uint256 public constant FEE_DENOMINATOR = 10 ** 10;
 
@@ -100,9 +101,9 @@ contract O3SwapPolygonQuickSwapBridge is Ownable {
         TransferHelper.safeTransferFrom(
             path[0], msg.sender, UniswapV2Library.pairFor(uniswapFactory, path[0], path[1]), amountIn
         );
-        uint balanceBefore = IERC20Uniswap(path[path.length - 1]).balanceOf(address(this));
+        uint balanceBefore = IERC20(path[path.length - 1]).balanceOf(address(this));
         _swapSupportingFeeOnTransferTokens(path, address(this));
-        uint amountOut = IERC20Uniswap(path[path.length - 1]).balanceOf(address(this)).sub(balanceBefore);
+        uint amountOut = IERC20(path[path.length - 1]).balanceOf(address(this)).sub(balanceBefore);
         require(amountOut >= amountOutMin, 'O3SwapPolygonQuickSwapBridge: INSUFFICIENT_OUTPUT_AMOUNT');
         return amountOut;
     }
@@ -151,7 +152,7 @@ contract O3SwapPolygonQuickSwapBridge is Ownable {
             polyMinOutAmount,
             fee
         );
-    }    
+    }
 
     function _swapExactMATICForTokensSupportingFeeOnTransferTokens(
         uint swapAmountOutMin,
@@ -163,9 +164,9 @@ contract O3SwapPolygonQuickSwapBridge is Ownable {
         require(amountIn > 0, 'O3SwapPolygonQuickSwapBridge: INSUFFICIENT_INPUT_AMOUNT');
         IWMATIC(WMATIC).deposit{value: amountIn}();
         assert(IWMATIC(WMATIC).transfer(UniswapV2Library.pairFor(uniswapFactory, path[0], path[1]), amountIn));
-        uint balanceBefore = IERC20Uniswap(path[path.length - 1]).balanceOf(address(this));
+        uint balanceBefore = IERC20(path[path.length - 1]).balanceOf(address(this));
         _swapSupportingFeeOnTransferTokens(path, address(this));
-        uint amountOut = IERC20Uniswap(path[path.length - 1]).balanceOf(address(this)).sub(balanceBefore);
+        uint amountOut = IERC20(path[path.length - 1]).balanceOf(address(this)).sub(balanceBefore);
         require(amountOut >= swapAmountOutMin, 'O3SwapPolygonQuickSwapBridge: INSUFFICIENT_OUTPUT_AMOUNT');
         return amountOut;
     }
@@ -196,9 +197,9 @@ contract O3SwapPolygonQuickSwapBridge is Ownable {
         TransferHelper.safeTransferFrom(
             path[0], msg.sender, UniswapV2Library.pairFor(uniswapFactory, path[0], path[1]), amountIn
         );
-        uint balanceBefore = IERC20Uniswap(WMATIC).balanceOf(address(this));
+        uint balanceBefore = IERC20(WMATIC).balanceOf(address(this));
         _swapSupportingFeeOnTransferTokens(path, address(this));
-        uint amountOut = IERC20Uniswap(WMATIC).balanceOf(address(this)).sub(balanceBefore);
+        uint amountOut = IERC20(WMATIC).balanceOf(address(this)).sub(balanceBefore);
         require(amountOut >= swapAmountOutMin, 'O3SwapPolygonQuickSwapBridge: INSUFFICIENT_OUTPUT_AMOUNT');
         return amountOut;
     }
@@ -215,7 +216,7 @@ contract O3SwapPolygonQuickSwapBridge is Ownable {
             { // scope to avoid stack too deep errors
             (uint reserve0, uint reserve1,) = pair.getReserves();
             (uint reserveInput, uint reserveOutput) = input == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
-            amountInput = IERC20Uniswap(input).balanceOf(address(pair)).sub(reserveInput);
+            amountInput = IERC20(input).balanceOf(address(pair)).sub(reserveInput);
             amountOutput = UniswapV2Library.getAmountOut(amountInput, reserveInput, reserveOutput);
             }
             (uint amount0Out, uint amount1Out) = input == token0 ? (uint(0), amountOutput) : (amountOutput, uint(0));
@@ -261,13 +262,13 @@ contract O3SwapPolygonQuickSwapBridge is Ownable {
 
     function collect(address token) external {
         if (token == WMATIC) {
-            uint256 wmaticBalance = IERC20Uniswap(token).balanceOf(address(this));
+            uint256 wmaticBalance = IERC20(token).balanceOf(address(this));
             if (wmaticBalance > 0) {
                 IWMATIC(WMATIC).withdraw(wmaticBalance);
             }
             TransferHelper.safeTransferETH(owner(), address(this).balance);
         } else {
-            TransferHelper.safeTransfer(token, owner(), IERC20Uniswap(token).balanceOf(address(this)));
+            TransferHelper.safeTransfer(token, owner(), IERC20(token).balanceOf(address(this)));
         }
     }
 

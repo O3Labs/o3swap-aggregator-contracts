@@ -1,27 +1,26 @@
 const O3SwapETHUniswapBridge = artifacts.require("O3SwapETHUniswapBridge");
 const O3SwapBSCPancakeBridge = artifacts.require("O3SwapBSCPancakeBridge");
 const O3SwapHecoMdexBridge = artifacts.require("O3SwapHecoMdexBridge");
-const O3SwapETHSushiBridge = artifacts.require("O3SwapETHSushiBridge");
+const O3SwapPolygonQuickSwapBridge = artifacts.require("O3SwapPolygonQuickSwapBridge");
 
 
 const weth_mainnet = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
 const weth_testnet = "0xc778417E063141139Fce010982780140Aa0cD5Ab";
-
 const wbnb_mainnet = "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c";
 const wbnb_testnet = "0x094616f0bdfb0b526bd735bf66eca0ad254ca81f";
-
 const wht_mainnet = "0x5545153ccfca01fbd7dd11c0b23ba694d9509a6f";
 const wht_testnet = "0x7af326b6351c8a9b8fb8cd205cbe11d4ac5fa836";
+const wmatic_mainnet = "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270";
+const wmatic_testnet = "0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889";
 
 const poly_swapper_eth_mainnet = "0x02e20ca05e38cbdf1a6235a7acdd34efc0434caa";
 const poly_swapper_eth_ropsten = "0x8Baa27e659F55249bb36113346980BFFABC53AeF";
-
 const poly_swapper_bsc_mainnet = "0x3ec481143d688442E581aD7116Bf1ECC76669cfa";
 const poly_swapper_bsc_testnet = "0x51FfD5196e3945c4CE25101eEB7f4062b97B9A1A";
-
 const poly_swapper_heco_mainnet = "0x70f4d1176f9276ab4B31658f58F7473858F2b550";
 const poly_swapper_heco_testnet = "0x0488ADd7e3D4C58acb8DF7c487dAfC48e3224833";
-
+const poly_swapper_polygon_mainnet = "";
+const poly_swapper_polygon_testnet = "0x1B0C55be400e2a7D924032B257Fbc75Bbfd256E7";
 
 const uniswap_eth_mainnet_factory = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f";
 const uniswap_eth_testnet_factory = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f";
@@ -31,6 +30,8 @@ const mdex_heco_mainnet_factory = "0xb0b670fc1F7724119963018DB0BfA86aDb22d941";
 const mdex_heco_testnet_factory = "0x42bF55Dfd95bbA679F2B0230A526ff407fd0498C";
 const sushi_eth_mainnet_factory = "0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac";
 const sushi_eth_testnet_factory = "0xc35DADB65012eC5796536bD9864eD8773aBc74C4";
+const quickswap_polygon_mainnet_factory = "0x5757371414417b8C6CAad45bAeF941aBc7d3Ab32";
+const quickswap_polygon_testnet_factory = "";
 
 module.exports = function (deployer, network, accounts) {
     switch (network) {
@@ -41,8 +42,8 @@ module.exports = function (deployer, network, accounts) {
             deployBSCPancakeMainnet(deployer, network); break;
         case "heco_mainnet_mdex":
             deployHecoMdexMainnet(deployer, network); break;
-        case "eth_mainnet_sushi":
-            deployETHSushiMainnet(deployer,network); break;
+        case "polygon_mainnet_quickswap":
+            deployPolygonQuickSwapMainnet(deployer,network); break;
 
         // Testnet
         case "eth_ropsten_uniswap":
@@ -51,8 +52,8 @@ module.exports = function (deployer, network, accounts) {
             deployBSCPancakeTestnet(deployer, network); break;
         case "heco_testnet_mdex":
             deployHecoMdexTestnet(deployer, network); break;
-        case "eth_ropsten_sushi":
-            deployETHSushiRopsten(deployer,network);break;
+        case "polygon_testnet_quickswap":
+            deployPolygonQuickSwapTestnet(deployer,network);break;
 
     }
 };
@@ -72,15 +73,15 @@ function deployETHUniswapMainnet(deployer, network) {
     deployer.deploy(O3SwapETHUniswapBridge, WETH, UniSwapFactory, polySwapper, polySwapperId);
 }
 
-function deployETHSushiMainnet(deployer, network) {
+function deployPolygonQuickSwapMainnet(deployer, network) {
     ensureMainnet(network);
 
-    var WETH = weth_mainnet;
-    var sushiFactory = sushi_eth_mainnet_factory;
-    var polySwapper = poly_swapper_eth_mainnet;
+    var WMATIC = wmatic_mainnet;
+    var quickSwapFactory = quickswap_polygon_mainnet_factory;
+    var polySwapper = poly_swapper_polygon_mainnet;
     var polySwapperId = 1;
 
-    deployer.deploy(O3SwapETHSushiBridge, WETH, sushiFactory, polySwapper, polySwapperId);
+    deployer.deploy(O3SwapPolygonQuickSwapBridge, WMATIC, quickSwapFactory, polySwapper, polySwapperId);
 }
 
 
@@ -121,15 +122,15 @@ function deployETHUniswapRopsten(deployer, network) {
     deployer.deploy(O3SwapETHUniswapBridge, WETH, UniSwapFactory, polySwapper, polySwapperId);
 }
 
-function deployETHSushiRopsten(deployer, network) {
+function deployPolygonQuickSwapTestnet(deployer, network) {
     ensureNotMainnet(network);
 
-    var WETH = weth_testnet;
-    var sushiFactory = sushi_eth_testnet_factory;
-    var polySwapper = poly_swapper_eth_ropsten;
+    var WMATIC = wmatic_testnet;
+    var quickSwapFactory = quickswap_polygon_testnet_factory;
+    var polySwapper = poly_swapper_polygon_testnet;
     var polySwapperId = 1;
 
-    deployer.deploy(O3SwapETHSushiBridge, WETH, sushiFactory, polySwapper, polySwapperId);
+    deployer.deploy(O3SwapPolygonQuickSwapBridge, WMATIC, quickSwapFactory, polySwapper, polySwapperId);
 }
 
 function deployBSCPancakeTestnet(deployer, network) {
