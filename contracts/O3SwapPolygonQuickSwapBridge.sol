@@ -3,7 +3,8 @@
 pragma solidity =0.6.12;
 
 import "./utils/Ownable.sol";
-import "./polygon/libraries/UniswapV2Library.sol";
+import "./polygon/interfaces/IQuickswapFactory.sol";
+import "./polygon/libraries/QuickswapLibrary.sol";
 import './libraries/TransferHelper.sol';
 import "./polygon/interfaces/IWMATIC.sol";
 import "./polygon/interfaces/IERC20.sol";
@@ -21,7 +22,7 @@ contract O3SwapPolygonQuickSwapBridge is Ownable {
     );
 
     address public WMATIC;
-    address public uniswapFactory;
+    address public quickswapFactory;
     address public polySwapper;
     uint public polySwapperId;
 
@@ -39,8 +40,12 @@ contract O3SwapPolygonQuickSwapBridge is Ownable {
         address _swapper,
         uint _swapperId
     ) public {
+        require(_wmatic != address(0), "O3SwapPolygonQuickSwapBridge: ZERO_WETH_ADDRESS");
+        require(_factory != address(0), "O3SwapPolygonQuickSwapBridge: ZERO_FACTORY_ADDRESS");
+        require(_swapper != address(0), "O3SwapPolygonQuickSwapBridge: ZERO_SWAPPER_ADDRESS");
+
         WMATIC = _wmatic;
-        uniswapFactory = _factory;
+        quickswapFactory = _factory;
         polySwapper = _swapper;
         polySwapperId = _swapperId;
     }
@@ -99,7 +104,7 @@ contract O3SwapPolygonQuickSwapBridge is Ownable {
         address[] calldata path
     ) internal virtual returns (uint) {
         TransferHelper.safeTransferFrom(
-            path[0], msg.sender, UniswapV2Library.pairFor(uniswapFactory, path[0], path[1]), amountIn
+            path[0], msg.sender, QuickswapLibrary.pairFor(quickswapFactory, path[0], path[1]), amountIn
         );
         uint balanceBefore = IERC20(path[path.length - 1]).balanceOf(address(this));
         _swapSupportingFeeOnTransferTokens(path, address(this));
@@ -108,13 +113,13 @@ contract O3SwapPolygonQuickSwapBridge is Ownable {
         return amountOut;
     }
 
-    function swapExactMATICForTokensSupportingFeeOnTransferTokens(
+    function swapExactETHForTokensSupportingFeeOnTransferTokens(
         uint swapAmountOutMin,
         address[] calldata path,
         address to,
         uint deadline
     ) external virtual payable ensure(deadline) {
-        uint amountOut = _swapExactMATICForTokensSupportingFeeOnTransferTokens(swapAmountOutMin, path, 0);
+        uint amountOut = _swapExactETHForTokensSupportingFeeOnTransferTokens(swapAmountOutMin, path, 0);
         uint feeAmount = amountOut.mul(aggregatorFee).div(FEE_DENOMINATOR);
 
         emit LOG_AGG_SWAP(amountOut, feeAmount);
@@ -123,7 +128,7 @@ contract O3SwapPolygonQuickSwapBridge is Ownable {
         TransferHelper.safeTransfer(path[path.length - 1], to, adjustedAmountOut);
     }
 
-    function swapExactMATICForTokensSupportingFeeOnTransferTokensCrossChain(
+    function swapExactETHForTokensSupportingFeeOnTransferTokensCrossChain(
         uint swapAmountOutMin,
         address[] calldata path,
         bytes memory to,
@@ -136,7 +141,7 @@ contract O3SwapPolygonQuickSwapBridge is Ownable {
     ) external virtual payable ensure(deadline) returns (bool) {
         uint polyAmountIn;
         {
-            uint amountOut = _swapExactMATICForTokensSupportingFeeOnTransferTokens(swapAmountOutMin, path, fee);
+            uint amountOut = _swapExactETHForTokensSupportingFeeOnTransferTokens(swapAmountOutMin, path, fee);
             uint feeAmount = amountOut.mul(aggregatorFee).div(FEE_DENOMINATOR);
             emit LOG_AGG_SWAP(amountOut, feeAmount);
             polyAmountIn = amountOut.sub(feeAmount);
@@ -154,7 +159,7 @@ contract O3SwapPolygonQuickSwapBridge is Ownable {
         );
     }
 
-    function _swapExactMATICForTokensSupportingFeeOnTransferTokens(
+    function _swapExactETHForTokensSupportingFeeOnTransferTokens(
         uint swapAmountOutMin,
         address[] calldata path,
         uint fee
@@ -163,7 +168,7 @@ contract O3SwapPolygonQuickSwapBridge is Ownable {
         uint amountIn = msg.value.sub(fee);
         require(amountIn > 0, 'O3SwapPolygonQuickSwapBridge: INSUFFICIENT_INPUT_AMOUNT');
         IWMATIC(WMATIC).deposit{value: amountIn}();
-        assert(IWMATIC(WMATIC).transfer(UniswapV2Library.pairFor(uniswapFactory, path[0], path[1]), amountIn));
+        assert(IWMATIC(WMATIC).transfer(QuickswapLibrary.pairFor(quickswapFactory, path[0], path[1]), amountIn));
         uint balanceBefore = IERC20(path[path.length - 1]).balanceOf(address(this));
         _swapSupportingFeeOnTransferTokens(path, address(this));
         uint amountOut = IERC20(path[path.length - 1]).balanceOf(address(this)).sub(balanceBefore);
@@ -171,14 +176,14 @@ contract O3SwapPolygonQuickSwapBridge is Ownable {
         return amountOut;
     }
 
-    function swapExactTokensForMATICSupportingFeeOnTransferTokens(
+    function swapExactTokensForETHSupportingFeeOnTransferTokens(
         uint amountIn,
         uint swapAmountOutMin,
         address[] calldata path,
         address to,
         uint deadline
     ) external virtual ensure(deadline) {
-        uint amountOut = _swapExactTokensForMATICSupportingFeeOnTransferTokens(amountIn, swapAmountOutMin, path);
+        uint amountOut = _swapExactTokensForETHSupportingFeeOnTransferTokens(amountIn, swapAmountOutMin, path);
         uint feeAmount = amountOut.mul(aggregatorFee).div(FEE_DENOMINATOR);
 
         emit LOG_AGG_SWAP(amountOut, feeAmount);
@@ -188,14 +193,14 @@ contract O3SwapPolygonQuickSwapBridge is Ownable {
         TransferHelper.safeTransferETH(to, adjustedAmountOut);
     }
 
-    function _swapExactTokensForMATICSupportingFeeOnTransferTokens(
+    function _swapExactTokensForETHSupportingFeeOnTransferTokens(
         uint amountIn,
         uint swapAmountOutMin,
         address[] calldata path
     ) internal virtual returns (uint) {
         require(path[path.length - 1] == WMATIC, 'O3SwapPolygonQuickSwapBridge: INVALID_PATH');
         TransferHelper.safeTransferFrom(
-            path[0], msg.sender, UniswapV2Library.pairFor(uniswapFactory, path[0], path[1]), amountIn
+            path[0], msg.sender, QuickswapLibrary.pairFor(quickswapFactory, path[0], path[1]), amountIn
         );
         uint balanceBefore = IERC20(WMATIC).balanceOf(address(this));
         _swapSupportingFeeOnTransferTokens(path, address(this));
@@ -209,18 +214,19 @@ contract O3SwapPolygonQuickSwapBridge is Ownable {
     function _swapSupportingFeeOnTransferTokens(address[] memory path, address _to) internal virtual {
         for (uint i; i < path.length - 1; i++) {
             (address input, address output) = (path[i], path[i + 1]);
-            (address token0,) = UniswapV2Library.sortTokens(input, output);
-            IUniswapV2Pair pair = IUniswapV2Pair(UniswapV2Library.pairFor(uniswapFactory, input, output));
+            (address token0,) = QuickswapLibrary.sortTokens(input, output);
+            require(IQuickswapFactory(quickswapFactory).getPair(input, output) != address(0), "O3SwapPolygonQuickSwapBridge: PAIR_NOT_EXIST");
+            IQuickswapPair pair = IQuickswapPair(QuickswapLibrary.pairFor(quickswapFactory, input, output));
             uint amountInput;
             uint amountOutput;
             { // scope to avoid stack too deep errors
             (uint reserve0, uint reserve1,) = pair.getReserves();
             (uint reserveInput, uint reserveOutput) = input == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
             amountInput = IERC20(input).balanceOf(address(pair)).sub(reserveInput);
-            amountOutput = UniswapV2Library.getAmountOut(amountInput, reserveInput, reserveOutput);
+            amountOutput = QuickswapLibrary.getAmountOut(amountInput, reserveInput, reserveOutput);
             }
             (uint amount0Out, uint amount1Out) = input == token0 ? (uint(0), amountOutput) : (amountOutput, uint(0));
-            address to = i < path.length - 2 ? UniswapV2Library.pairFor(uniswapFactory, output, path[i + 2]) : _to;
+            address to = i < path.length - 2 ? QuickswapLibrary.pairFor(quickswapFactory, output, path[i + 2]) : _to;
             pair.swap(amount0Out, amount1Out, to, new bytes(0));
         }
     }
@@ -276,8 +282,8 @@ contract O3SwapPolygonQuickSwapBridge is Ownable {
         aggregatorFee = _fee;
     }
 
-    function setUniswapFactory(address _factory) external onlyOwner {
-        uniswapFactory = _factory;
+    function setQuickswapFactory(address _factory) external onlyOwner {
+        quickswapFactory = _factory;
     }
 
     function setPolySwapper(address _swapper) external onlyOwner {

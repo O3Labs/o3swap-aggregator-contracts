@@ -70,8 +70,8 @@ const polygon_mainnet_rpc = 'https://rpc-mainnet.maticvigil.com';
 const network_polygon_mainnet = {
   provider: () => new HDWalletProvider(privateKey, polygon_mainnet_rpc),
   network_id: 137,
-  gas: 5500000,
-  gasPrice: 5 * 10**9,
+  gas: 550 * 10000,
+  gasPrice: 3 * 10**9,
   confirmations: 0,
   timeoutBlocks: 200,
   skipDryRun: false
@@ -81,9 +81,9 @@ const polygon_testnet_rpc = 'https://rpc-mumbai.maticvigil.com';
 const network_polygon_testnet = {
   provider: () => new HDWalletProvider(privateKey, polygon_testnet_rpc),
   network_id: 80001,
-  gas: 5500000,
-  gasPrice: 5 * 10**9,
-  confirmations: 0,
+  gas: 550 * 10000,
+  gasPrice: 30 * 10**9,
+  confirmations: 2,
   timeoutBlocks: 200,
   skipDryRun: false
 };

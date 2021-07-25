@@ -19,7 +19,7 @@ const poly_swapper_bsc_mainnet = "0x3ec481143d688442E581aD7116Bf1ECC76669cfa";
 const poly_swapper_bsc_testnet = "0x51FfD5196e3945c4CE25101eEB7f4062b97B9A1A";
 const poly_swapper_heco_mainnet = "0x70f4d1176f9276ab4B31658f58F7473858F2b550";
 const poly_swapper_heco_testnet = "0x0488ADd7e3D4C58acb8DF7c487dAfC48e3224833";
-const poly_swapper_polygon_mainnet = "";
+const poly_swapper_polygon_mainnet = "0xabc248c717fA0A9a78ff4Bf48A316c9e241A82C4";
 const poly_swapper_polygon_testnet = "0x1B0C55be400e2a7D924032B257Fbc75Bbfd256E7";
 
 const uniswap_eth_mainnet_factory = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f";
@@ -83,7 +83,6 @@ function deployPolygonQuickSwapMainnet(deployer, network) {
 
     deployer.deploy(O3SwapPolygonQuickSwapBridge, WMATIC, quickSwapFactory, polySwapper, polySwapperId);
 }
-
 
 function deployBSCPancakeMainnet(deployer, network) {
     ensureMainnet(network);
