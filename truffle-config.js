@@ -88,11 +88,33 @@ const network_polygon_testnet = {
   skipDryRun: false
 };
 
+const arbitrum_mainnet_rpc = 'https://arb1.arbitrum.io/rpc';
+const network_arbitrum_mainnet = {
+  provider: () => new HDWalletProvider(privateKey, arbitrum_mainnet_rpc),
+  network_id: 42161,
+  gas: 12000*10000,
+  gasPrice: 2 * 10**9,
+  confirmations: 0,
+  timeoutBlocks: 200,
+  skipDryRun: false
+};
+
+const arbitrum_testnet_rpc = 'https://rinkeby.arbitrum.io/rpc';
+const network_arbitrum_testnet = {
+  provider: () => new HDWalletProvider(privateKey, arbitrum_testnet_rpc),
+  network_id: 421611,
+  gas: 12000*10000,
+  gasPrice: 2 * 10**9,
+  confirmations: 0,
+  timeoutBlocks: 200,
+  skipDryRun: false
+};
+
 const network_development = {
   host: "127.0.0.1",
   port: 8545,
   network_id: "*",
- };
+};
 
 module.exports = {
   networks: {
@@ -100,13 +122,24 @@ module.exports = {
     bsc_mainnet_pancake: network_bsc_mainnet,
     heco_mainnet_mdex: network_heco_mainnet,
     polygon_mainnet_quickswap: network_polygon_mainnet,
+    arbitrum_mainnet_sushi: network_arbitrum_mainnet,
 
     eth_ropsten_uniswap: network_eth_ropsten,
     bsc_testnet_pancake: network_bsc_testnet,
     heco_testnet_mdex: network_heco_testnet,
     polygon_testnet_quickswap: network_polygon_testnet,
+    arbitrum_testnet_sushi: network_arbitrum_testnet,
 
     development: network_development
+  },
+
+  api_keys: {
+    etherscan: 'MY_API_KEY',
+    bscscan: 'MY_API_KEY',
+    hecoinfo: 'MY_API_KEY',
+    ftmscan: 'MY_API_KEY',
+    polygonscan: 'MY_API_KEY',
+    arbiscan: 'MY_API_KEY',
   },
 
   mocha: {
